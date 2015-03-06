@@ -53,7 +53,7 @@ $wgEmailAuthentication = true;
 
 ## Database settings
 $wgDBConnectionString = getenv('DATABASE_URL');
-if (preg_match('%(.*?)://([^:]+):([^@]+)@([^:]+):(\d+)/(.*)%', $_wgDBConnectionString, $regs, PREG_OFFSET_CAPTURE)) {
+if (preg_match('%(.*?)://([^:]+):([^@]+)@([^:]+):(\d+)/(.*)%', $wgDBConnectionString, $regs, PREG_OFFSET_CAPTURE)) {
 	$wgDBtype = $regs[1][0];
 	$wgDBuser = $regs[2][0];
 	$wgDBpassword = $regs[3][0];
