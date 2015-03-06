@@ -136,3 +136,4 @@ require_once "$IP/skins/Vector/Vector.php";
 
 # End of automatically generated settings.
 # Add more configuration options below.
+require_once "$IP/extensions/GoogleLogin/GoogleLogin.php";
