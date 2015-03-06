@@ -40,6 +40,13 @@ if ( !function_exists( 'version_compare' ) || version_compare( PHP_VERSION, '5.3
 	wfPHPVersionError( 'index.php' );
 }
 
+# Force HTTPS
+if($_SERVER["HTTPS"] != "on")
+{
+		header("Location: https://{$_SERVER['SERVER_NAME']}{$_SERVER['REQUEST_URI']}";
+		exit();
+}
+
 require __DIR__ . '/includes/WebStart.php';
 
 $mediaWiki = new MediaWiki();
