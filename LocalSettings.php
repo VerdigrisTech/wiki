@@ -52,17 +52,13 @@ $wgEnotifWatchlist = false; # UPO
 $wgEmailAuthentication = true;
 
 ## Database settings
-$wgDBConnectionString = getenv('DATABASE_URL');
-if (preg_match('%(.*?)://([^:]+):([^@]+)@([^:]+):(\d+)/(.*)%', $wgDBConnectionString, $regs, PREG_OFFSET_CAPTURE)) {
-	$wgDBtype = $regs[1][0];
-	$wgDBuser = $regs[2][0];
-	$wgDBpassword = $regs[3][0];
-	$wgDBserver = $regs[4][0];
-	$wgDBport = $regs[5][0];
-	$wgDBname = $regs[6][0];
-} else {
-	die("Failed to parse DB connection string");
-}
+$wgDBUrl = parse_url(getenv('DATABASE_URL'));
+$wgDBtype = $wgDBUrl["scheme"];
+$wgDBuser = $wgDBUrl["user"];
+$wgDBpassword = $wgDBUrl["pass"];
+$wgDBserver = $wgDBUrl["host"];
+$wgDBport = $wgDBUrl["port"];
+$wgDBname = substr($wgDBUrl["path"], 1);
 
 # MySQL specific settings
 $wgDBprefix = "";
