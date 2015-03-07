@@ -146,5 +146,5 @@ require_once "$IP/extensions/GoogleLogin/GoogleLogin.php";
 $wgGLAppId = getenv('GOOGLE_OAUTH_CLIENT_ID');
 $wgGLSecret = getenv('GOOGLE_OAUTH_CLIENT_SECRET');
 $wgGLAllowedDomains = array('verdigris.co');
-$wgGLReplaceMWLogin = true;
-$wgGLAllowAccountCreation = true;
+# $wgGLReplaceMWLogin = true;
+# $wgGLAllowAccountCreation = true;
