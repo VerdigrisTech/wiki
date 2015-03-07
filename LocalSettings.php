@@ -149,3 +149,5 @@ $wgGLSecret = getenv('GOOGLE_OAUTH_CLIENT_SECRET');
 $wgGLAllowedDomains = array('verdigris.co');
 $wgGLAllowAccountCreation = true;
 # $wgGLReplaceMWLogin = true;
+
+$wgShowExceptionDetails = true;
