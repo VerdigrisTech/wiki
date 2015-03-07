@@ -28,6 +28,8 @@ $wgMetaNamespace = "Verdigris_Wiki";
 ## https://www.mediawiki.org/wiki/Manual:Short_URL
 $wgScriptPath = "";
 $wgScriptExtension = ".php";
+$wgArticlePath = "/wiki/$1";
+$wgUsePathInfo = true;
 
 ## The protocol and server name to use in fully-qualified URLs
 $wgServer = "https://wiki.verdigris.io";
