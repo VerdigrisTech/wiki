@@ -120,6 +120,7 @@ $wgDiff3 = "/usr/bin/diff3";
 
 # The following permissions were set based on your choice in the installer
 $wgGroupPermissions['*']['createaccount'] = false;
+$wgGroupPermissions['*']['read'] = false;
 $wgGroupPermissions['*']['edit'] = false;
 
 # Need to be logged in to view wiki.
@@ -146,5 +147,5 @@ require_once "$IP/extensions/GoogleLogin/GoogleLogin.php";
 $wgGLAppId = getenv('GOOGLE_OAUTH_CLIENT_ID');
 $wgGLSecret = getenv('GOOGLE_OAUTH_CLIENT_SECRET');
 $wgGLAllowedDomains = array('verdigris.co');
+$wgGLAllowAccountCreation = true;
 # $wgGLReplaceMWLogin = true;
-# $wgGLAllowAccountCreation = true;
