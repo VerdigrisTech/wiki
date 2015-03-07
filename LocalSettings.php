@@ -120,16 +120,10 @@ $wgDiff3 = "/usr/bin/diff3";
 
 # The following permissions were set based on your choice in the installer
 $wgGroupPermissions['*']['createaccount'] = false;
-$wgGroupPermissions['*']['read'] = false;						# Private Wiki
 $wgGroupPermissions['*']['edit'] = false;
 
 # Need to be logged in to view wiki.
-$wgGLAppId = getenv('GOOGLE_OAUTH_CLIENT_ID');
-$wgGLSecret = getenv('GOOGLE_OAUTH_CLIENT_SECRET');
-$wgGLAllowedDomains = array('verdigris.co');
-$wgGLReplaceMWLogin = true;
 $wgWhitelistRead = array( 'Special:GoogleLogin' );
-$wgGLAllowAccountCreation = true;
 
 ## Default skin: you can change the default skin. Use the internal symbolic
 ## names, ie 'vector', 'monobook':
@@ -149,3 +143,8 @@ require_once "$IP/skins/Vector/Vector.php";
 ## Google Login Extension to allow OAuth login using Verdigris corporate
 ## credentials.
 require_once "$IP/extensions/GoogleLogin/GoogleLogin.php";
+$wgGLAppId = getenv('GOOGLE_OAUTH_CLIENT_ID');
+$wgGLSecret = getenv('GOOGLE_OAUTH_CLIENT_SECRET');
+$wgGLAllowedDomains = array('verdigris.co');
+$wgGLReplaceMWLogin = true;
+$wgGLAllowAccountCreation = true;
