@@ -124,8 +124,9 @@ $wgGroupPermissions['*']['read'] = false;						# Private Wiki
 $wgGroupPermissions['*']['edit'] = false;
 
 # Need to be logged in to view wiki.
-$wgGLAppId = getenv('GOOGLE_OAUTH_CLIENT_ID');
+#$wgGLAppId = getenv('GOOGLE_OAUTH_CLIENT_ID');
 $wgGLSecret = getenv('GOOGLE_OAUTH_CLIENT_SECRET');
+$wgGLAppId = "98360573942-5mrgn85i8r3cefgbmte3etbb75pn402f.apps.googleusercontent.com"
 $wgGLAllowedDomains = array('verdigris.co');
 $wgGLReplaceMWLogin = true;
 $wgWhitelistRead = array( 'Special:GoogleLogin' );
