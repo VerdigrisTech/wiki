@@ -155,3 +155,9 @@ $wgGLAllowAccountCreation = true;
 $wgShowExceptionDetails = true;
 
 require_once "$IP/extensions/WikiEditor/WikiEditor.php";
+
+$wgDefaultUserOptions['usebetatoolbar'] = 1;
+$wgDefaultUserOptions['usebetatoolbar-cgd'] = 1;
+
+# Displays the Preview and Changes tabs
+$wgDefaultUserOptions['wikieditor-preview'] = 1;
