@@ -1,4 +1,8 @@
 <?php
+/*
+		Modified to work with 1.21 and CloudFront.
+		Owen Borseth - owen at borseth dot us
+*/
 
 /**
  * A repository for files accessible via the Amazon S3 filesystem. Does not support
@@ -9,6 +13,7 @@ class FSs3Repo extends FileRepo {
 	var $directory, $deletedDir, $deletedHashLevels, $fileMode;
 	var $urlbase;
 	var $AWS_ACCESS_KEY, $AWS_SECRET_KEY, $AWS_S3_BUCKET, $AWS_S3_PUBLIC, $AWS_S3_SSL;
+	var $cloudFrontUrl;
 	var $fileFactory = array( 'UnregisteredLocalFile', 'newFromTitle' );
 	var $oldFileFactory = false;
 	var $pathDisclosureProtection = 'simple';
@@ -17,11 +22,13 @@ class FSs3Repo extends FileRepo {
 		parent::__construct( $info );
 
 		// Required settings
-		$this->directory = isset( $info['directory'] ) ? $info['directory'] : 
-			"http://s3.amazonaws.com/$wgUploadS3Bucket/$wgUploadDirectory";
+		$this->directory = isset( $info['directory'] ) ? $info['directory'] :
+			"http://s3.amazonaws.com/".$info['wgUploadS3Bucket']."/".$info['wgUploadDirectory'];
 		$this->AWS_ACCESS_KEY = $info['AWS_ACCESS_KEY'];
 		$this->AWS_SECRET_KEY = $info['AWS_SECRET_KEY'];
 		$this->AWS_S3_BUCKET = $info['AWS_S3_BUCKET'];
+		$this->cloudFrontUrl = $info['cloudFrontUrl'];
+		$this->cloudFrontDirectory = $this->cloudFrontUrl.($this->directory ? $this->directory : $info['wgUploadDirectory']);
 		global $s3;
 		$s3->setAuth($this->AWS_ACCESS_KEY, $this->AWS_SECRET_KEY);
 
@@ -69,7 +76,7 @@ class FSs3Repo extends FileRepo {
 	function getUrlBase() {
 		return $this->urlbase;
 	}
-	
+
 	/**
 	 * Returns true if the repository uses a multi-level directory structure
 	 */
@@ -216,23 +223,23 @@ class FSs3Repo extends FileRepo {
 
 			if ( $flags & self::DELETE_SOURCE ) {
 				wfDebug(__METHOD__."(delete): dstPath: $dstPath, ".print_r($triplet,true));
-				if ( $deleteDest ) {				
+				if ( $deleteDest ) {
 					if(! $s3->deleteObject($this->AWS_S3_BUCKET, $dstPath)) {
 						wfDebug(__METHOD__.": FAILED - delete: $dstPath");
 					}
 				}
 				$info = $s3->getObjectInfo($this->AWS_S3_BUCKET, $srcPath);
 				if ( ! $info ) { // local file
-					if ( ! $s3->putObjectFile($srcPath, $this->AWS_S3_BUCKET, $dstPath, 
+					if ( ! $s3->putObjectFile($srcPath, $this->AWS_S3_BUCKET, $dstPath,
 							($this->AWS_S3_PUBLIC ? S3::ACL_PUBLIC_READ : S3::ACL_PRIVATE))) {
 						$status->error( 'filecopyerror', $srcPath, $dstPath );
 						$good = false;
 					}
 					unlink( $srcPath );
 				} else { // s3 file
-					if ( ! $s3->copyObject($this->AWS_S3_BUCKET, $srcPath, 
-								$this->AWS_S3_BUCKET, $dstPath, 
-						   ($this->AWS_S3_PUBLIC ? S3::ACL_PUBLIC_READ : S3::ACL_PRIVATE)) &&
+					if ( ! $s3->copyObject($this->AWS_S3_BUCKET, $srcPath,
+								$this->AWS_S3_BUCKET, $dstPath,
+							($this->AWS_S3_PUBLIC ? S3::ACL_PUBLIC_READ : S3::ACL_PRIVATE)) &&
 						! $s3->deleteObject($this->AWS_S3_BUCKET, $srcPath)) {
 						$status->error( 'filecopyerror', $srcPath, $dstPath );
 						$good = false;
@@ -242,16 +249,16 @@ class FSs3Repo extends FileRepo {
 				wfDebug(__METHOD__."(transfer): dstPath: $dstPath, ".print_r($triplet,true));
 				$info = $s3->getObjectInfo($this->AWS_S3_BUCKET, $srcPath);
 				if ( ! $info ) { // local file
-					if ( ! $s3->putObjectFile($srcPath, $this->AWS_S3_BUCKET, $dstPath, 
+					if ( ! $s3->putObjectFile($srcPath, $this->AWS_S3_BUCKET, $dstPath,
 							($this->AWS_S3_PUBLIC ? S3::ACL_PUBLIC_READ : S3::ACL_PRIVATE))) {
 						$status->error( 'filecopyerror', $srcPath, $dstPath );
 						$good = false;
 					}
 					unlink( $srcPath );
 				} else { // s3 file
-					if ( ! $s3->copyObject($this->AWS_S3_BUCKET, $srcPath, 
-								$this->AWS_S3_BUCKET, $dstPath, 
-						   ($this->AWS_S3_PUBLIC ? S3::ACL_PUBLIC_READ : S3::ACL_PRIVATE)) &&
+					if ( ! $s3->copyObject($this->AWS_S3_BUCKET, $srcPath,
+								$this->AWS_S3_BUCKET, $dstPath,
+							($this->AWS_S3_PUBLIC ? S3::ACL_PUBLIC_READ : S3::ACL_PRIVATE)) &&
 						! $s3->deleteObject($this->AWS_S3_BUCKET, $srcPath)) {
 						$status->error( 'filecopyerror', $srcPath, $dstPath );
 						$good = false;
@@ -306,7 +313,7 @@ class FSs3Repo extends FileRepo {
 		if( $status->isOk() ) {
 			if ( file_put_contents( $tmpLoc, $chunk, FILE_APPEND ) ) {
 				$status->value = $srcPath;
-				if ( ! $s3->putObjectFile($tmpLoc, $this->AWS_S3_BUCKET, $srcPath, 
+				if ( ! $s3->putObjectFile($tmpLoc, $this->AWS_S3_BUCKET, $srcPath,
 						($this->AWS_S3_PUBLIC ? S3::ACL_PUBLIC_READ : S3::ACL_PRIVATE))) {
 					$status->fatal( 'fileappenderror', $toAppendPath,  $srcPath);
 				}
@@ -464,9 +471,9 @@ class FSs3Repo extends FileRepo {
 				} else {
 					wfDebug(__METHOD__.": moving file $dstPath to $archivePath\n");
 					if(! (
-							$s3->copyObject($this->AWS_S3_BUCKET, $dstPath, 
-								$this->AWS_S3_BUCKET, $archivePath, 
-								   ($this->AWS_S3_PUBLIC ? S3::ACL_PUBLIC_READ : S3::ACL_PRIVATE)) &&
+							$s3->copyObject($this->AWS_S3_BUCKET, $dstPath,
+								$this->AWS_S3_BUCKET, $archivePath,
+									($this->AWS_S3_PUBLIC ? S3::ACL_PUBLIC_READ : S3::ACL_PRIVATE)) &&
 							$s3->deleteObject($this->AWS_S3_BUCKET, $dstPath))
 						) {
 						wfDebug(__METHOD__.": FAILED moving file $dstPath to $archivePath\n");
@@ -490,12 +497,17 @@ class FSs3Repo extends FileRepo {
 			}
 
 			$good = true;
+			wfDebug(__METHOD__.": got here\n");
 			wfSuppressWarnings();
-			if(! is_file( $srcPath )) {			
+			if(! is_file( $srcPath )) {
 				// S3
-				if(! $s3->copyObject($this->AWS_S3_BUCKET, $srcPath, $this->AWS_S3_BUCKET, 
-				        $this->AWS_S3_FOLDER . $dstPath, ($this->AWS_S3_PUBLIC ? S3::ACL_PUBLIC_READ : S3::ACL_PRIVATE))) {
+				wfDebug(__METHOD__.": got here:1\n");
+				if(! $s3->copyObject($this->AWS_S3_BUCKET, $srcPath, $this->AWS_S3_BUCKET,
+								$this->AWS_S3_FOLDER . $dstPath, ($this->AWS_S3_PUBLIC ? S3::ACL_PUBLIC_READ : S3::ACL_PRIVATE))) {
 					wfDebug(__METHOD__.": FAILED - copy: $srcPath to $dstPath");
+				} else {
+					wfDebug(__METHOD__.": got here:2\n");
+
 				}
 				//$s3->putObjectFile($srcPath, $this->AWS_S3_BUCKET, $this->directory/*AWS_S3_FOLDER*/ . $dstPath, ($this->AWS_S3_PUBLIC ? S3::ACL_PUBLIC_READ : S3::ACL_PRIVATE));
 				if ( $flags & self::DELETE_SOURCE ) {
@@ -504,11 +516,15 @@ class FSs3Repo extends FileRepo {
 					}
 				}
 			} else {
+				wfDebug(__METHOD__.": got here:3:$srcPath\n");
 				// Local file
-				if(! $s3->putObjectFile($srcPath, $this->AWS_S3_BUCKET, $dstPath, 
+				if(! $s3->putObjectFile($srcPath, $this->AWS_S3_BUCKET, $dstPath,
 							($this->AWS_S3_PUBLIC ? S3::ACL_PUBLIC_READ : S3::ACL_PRIVATE))) {
 					$status->error( 'filecopyerror', $srcPath, $dstPath );
 					$good = false;
+					wfDebug(__METHOD__.": got here:4:putObjectFile(".$this->AWS_S3_BUCKET . ", ". $dstPath.")\n");
+				} else {
+					wfDebug(__METHOD__.": got here:5\n");
 				}
 				if ( $flags & self::DELETE_SOURCE ) {
 					unlink($srcPath);
@@ -597,9 +613,9 @@ class FSs3Repo extends FileRepo {
 				}
 			} else{
 				if(! (
-						$s3->copyObject($this->AWS_S3_BUCKET, $srcPath, 
-							$this->AWS_S3_BUCKET, $archivePath, 
-							   ($this->AWS_S3_PUBLIC ? S3::ACL_PUBLIC_READ : S3::ACL_PRIVATE)) &&
+						$s3->copyObject($this->AWS_S3_BUCKET, $srcPath,
+							$this->AWS_S3_BUCKET, $archivePath,
+								($this->AWS_S3_PUBLIC ? S3::ACL_PUBLIC_READ : S3::ACL_PRIVATE)) &&
 						$s3->deleteObject($this->AWS_S3_BUCKET, $srcPath))
 					) {
 					wfDebug(__METHOD__.": FAILED moving file $dstPath to $archivePath\n");

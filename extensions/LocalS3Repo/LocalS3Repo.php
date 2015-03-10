@@ -1,5 +1,10 @@
 <?php
- /**
+/*
+	Modified to work with 1.21 and CloudFront.
+	Owen Borseth - owen at borseth dot us
+*/
+
+/**
  * A repository for files accessible via the Amazon S3 service, treated as local filesystem.
  * Does not support database access or registration.
  *
@@ -41,13 +46,13 @@ require_once("$IP/extensions/LocalS3Repo/LocalS3Repo.php");
  ***
  * @ingroup FileRepo
  */
- 
+
 if (!class_exists('S3')) require_once 'S3.php';
 require_once("$IP/extensions/LocalS3Repo/FSs3Repo.php");
 require_once("$IP/extensions/LocalS3Repo/LocalS3File.php");
 require_once("$IP/extensions/LocalS3Repo/OldLocalS3File.php");
 
- // Instantiate the class
+// Instantiate the class
 $s3 = new S3();
 
 class LocalS3Repo extends FSs3Repo {
@@ -113,7 +118,7 @@ class LocalS3Repo extends FSs3Repo {
 		}
 		return $status;
 	}
-	
+
 	/**
 	 * Checks if there is a redirect named as $title
 	 *
@@ -137,7 +142,7 @@ class LocalS3Repo extends FSs3Repo {
 			$expiry = 86400; // has invalidation, 1 day
 		}
 		$cachedValue = $wgMemc->get( $memcKey );
-		if ( $cachedValue === ' '  || $cachedValue === '' ) {
+		if ( $cachedValue === ' '	|| $cachedValue === '' ) {
 			// Does not exist
 			return false;
 		} elseif ( strval( $cachedValue ) !== '' ) {
@@ -190,7 +195,7 @@ class LocalS3Repo extends FSs3Repo {
 	}
 
 	/**
-	 * Get an array or iterator of file objects for files that have a given 
+	 * Get an array or iterator of file objects for files that have a given
 	 * SHA-1 content hash.
 	 */
 	function findBySha1( $hash ) {
@@ -200,7 +205,7 @@ class LocalS3Repo extends FSs3Repo {
 			LocalS3File::selectFields(),
 			array( 'img_sha1' => $hash )
 		);
-		
+
 		$result = array();
 		while ( $row = $res->fetchObject() )
 			$result[] = $this->newFileFromRow( $row );
@@ -224,7 +229,7 @@ class LocalS3Repo extends FSs3Repo {
 
 	/**
 	 * Get a key on the primary cache for this repository.
-	 * Returns false if the repository's cache is not accessible at this site. 
+	 * Returns false if the repository's cache is not accessible at this site.
 	 * The parameters are the parts of the key, as for wfMemcKey().
 	 */
 	function getSharedCacheKey( /*...*/ ) {
@@ -245,4 +250,3 @@ class LocalS3Repo extends FSs3Repo {
 		}
 	}
 }
-
