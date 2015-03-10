@@ -153,3 +153,5 @@ $wgGLAllowAccountCreation = true;
 # $wgGLReplaceMWLogin = true;
 
 $wgShowExceptionDetails = true;
+
+require_once "$IP/extensions/WikiEditor/WikiEditor.php";
