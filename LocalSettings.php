@@ -192,3 +192,6 @@ $wgLocalFileRepo = array(
 );
 
 require_once("$IP/extensions/LocalS3Repo/LocalS3Repo.php");
+
+# Load Syntax Highlight plugin
+wfLoadExtension('SyntaxHighlight_GeSHi');
