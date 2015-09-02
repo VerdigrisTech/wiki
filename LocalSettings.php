@@ -72,8 +72,18 @@ $wgDBTableOptions = "ENGINE=InnoDB, DEFAULT CHARSET=binary";
 $wgDBmysql5 = true;
 
 ## Shared memory settings
-$wgMainCacheType = CACHE_MEMCACHED;
+$wgObjectCaches['redis'] = array(
+	'class'								=> 'RedisBagOStuff',
+	'servers'							=> array( getenv('REDIS_HOST') ),
+	'connectTimeout'			=> 1,
+	'persistent'					=> false,
+	'password'						=> getenv('REDIS_SECRET')
+	// 'automaticFailOver' => true,
+)
+$wgMainCacheType = 'redis';
+$wgSessionCacheType = 'redis';
 $wgMemCachedServers = array( 'pub-memcache-19516.us-east-1-2.4.ec2.garantiadata.com:19516' );
+
 
 ## To enable image uploads, make sure the 'images' directory
 ## is writable, then set this to true:
