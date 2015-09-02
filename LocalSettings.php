@@ -79,11 +79,10 @@ $wgObjectCaches['redis'] = array(
 	'persistent'					=> false,
 	'password'						=> getenv('REDIS_SECRET')
 	// 'automaticFailOver' => true,
-)
+);
 $wgMainCacheType = 'redis';
 $wgSessionCacheType = 'redis';
 $wgMemCachedServers = array( 'pub-memcache-19516.us-east-1-2.4.ec2.garantiadata.com:19516' );
-
 
 ## To enable image uploads, make sure the 'images' directory
 ## is writable, then set this to true:
