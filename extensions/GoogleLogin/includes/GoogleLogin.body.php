@@ -398,7 +398,7 @@
 				throw new MWException( $cacheFolder . ' is not writeable!' );
 			}
 			$tlds = file(
-				'http://wiki.verdigris.io/effective_tld_names.dat'
+				'http://s3-us-west-1.amazonaws.com/verdigris-wiki/effective_tld_names.dat'
 			);
 			if ( $tlds === false ) {
 				throw new MWException( 'Domainlist can not be downloaded!' );
