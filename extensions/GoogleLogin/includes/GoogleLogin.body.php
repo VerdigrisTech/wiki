@@ -397,10 +397,8 @@
 			if ( !is_writable( $cacheFolder ) ) {
 				throw new MWException( $cacheFolder . ' is not writeable!' );
 			}
-
-			// old: 'http://mxr.mozilla.org/mozilla-central/source/netwerk/dns/effective_tld_names.dat?raw=1'
 			$tlds = file(
-				'https://publicsuffix.org/list/effective_tld_names.dat'
+				'http://mxr.mozilla.org/mozilla-central/source/netwerk/dns/effective_tld_names.dat?raw=1'
 			);
 			if ( $tlds === false ) {
 				throw new MWException( 'Domainlist can not be downloaded!' );
