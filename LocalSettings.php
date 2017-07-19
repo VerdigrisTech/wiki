@@ -205,7 +205,7 @@ $wgDefaultUserOptions['wikieditor-publish'] = 1;
 // require_once("$IP/extensions/LocalS3Repo/LocalS3Repo.php");
 
 # Load Syntax Highlight plugin
-require_once("$IP/extensions/SyntaxHighlight_GeSHi/SyntaxHighlight_GeSHi.php");
+wfLoadExtension('SyntaxHighlight_GeSHi');
 
 # Load Cite extension
-require_once "$IP/extensions/Cite/Cite.php";
+wfLoadExtension('Cite');
