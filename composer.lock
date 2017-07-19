@@ -3417,6 +3417,7 @@
         "ext-iconv": "*",
         "ext-json": "*",
         "ext-mbstring": "*",
+        "ext-redis": "*",
         "ext-xml": "*",
         "php": ">=5.5.9"
     },
