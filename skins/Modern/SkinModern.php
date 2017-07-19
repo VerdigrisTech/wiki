@@ -55,21 +55,19 @@ class ModernTemplate extends MonoBookTemplate {
 	 * Takes an associative array of data set from a SkinTemplate-based
 	 * class, and a wrapper for MediaWiki's localization database, and
 	 * outputs a formatted page.
-	 *
-	 * @access private
 	 */
 	function execute() {
-		// Suppress warnings to prevent notices about missing indexes in $this->data
-		wfSuppressWarnings();
-
 		$this->html( 'headelement' );
 		?>
 
 		<!-- heading -->
-		<div id="mw_header"><h1 id="firstHeading" lang="<?php
+		<div id="mw_header">
+			<?php echo $this->getIndicators(); ?>
+			<h1 id="firstHeading" lang="<?php
 			$this->data['pageLanguage'] = $this->getSkin()->getTitle()->getPageViewLanguage()->getHtmlCode();
 			$this->text( 'pageLanguage' );
-			?>"><span dir="auto"><?php $this->html( 'title' ) ?></span></h1></div>
+			?>"><?php $this->html( 'title' ) ?></h1>
+		</div>
 
 		<div id="mw_main">
 			<div id="mw_contentwrapper">
@@ -200,6 +198,5 @@ class ModernTemplate extends MonoBookTemplate {
 	</body>
 </html>
 		<?php
-		wfRestoreWarnings();
 	} // end of execute() method
 } // end of class

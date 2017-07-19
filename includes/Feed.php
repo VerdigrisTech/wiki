@@ -92,7 +92,7 @@ class FeedItem {
 	 */
 	public function getUniqueId() {
 		if ( $this->uniqueId ) {
-			return $this->xmlEncode( $this->uniqueId );
+			return $this->xmlEncode( wfExpandUrl( $this->uniqueId, PROTO_CURRENT ) );
 		}
 	}
 
@@ -141,7 +141,7 @@ class FeedItem {
 	 */
 	public function getLanguage() {
 		global $wgLanguageCode;
-		return $wgLanguageCode;
+		return wfBCP47( $wgLanguageCode );
 	}
 
 	/**
@@ -184,7 +184,8 @@ class FeedItem {
 }
 
 /**
- * @todo document (needs one-sentence top-level class description).
+ * Class to support the outputting of syndication feeds in Atom and RSS format.
+ *
  * @ingroup Feed
  */
 abstract class ChannelFeed extends FeedItem {
@@ -235,7 +236,6 @@ abstract class ChannelFeed extends FeedItem {
 			$wgOut->addVaryHeader( 'X-Forwarded-Proto' );
 		}
 		$wgOut->sendCacheControl();
-
 	}
 
 	/**
@@ -247,12 +247,12 @@ abstract class ChannelFeed extends FeedItem {
 		global $wgRequest;
 
 		$ctype = $wgRequest->getVal( 'ctype', 'application/xml' );
-		$allowedctypes = array(
+		$allowedctypes = [
 			'application/xml',
 			'text/xml',
 			'application/rss+xml',
 			'application/atom+xml'
-		);
+		];
 
 		return ( in_array( $ctype, $allowedctypes ) ? $ctype : 'application/xml' );
 	}
@@ -338,13 +338,14 @@ class RSSFeed extends ChannelFeed {
  */
 class AtomFeed extends ChannelFeed {
 	/**
-	 * @todo document
-	 * @param string|int $ts
+	 * Format a date given timestamp.
+	 *
+	 * @param string|int $timestamp
 	 * @return string
 	 */
-	function formatTime( $ts ) {
+	function formatTime( $timestamp ) {
 		// need to use RFC 822 time format at least for rss2.0
-		return gmdate( 'Y-m-d\TH:i:s', wfTimestamp( TS_UNIX, $ts ) );
+		return gmdate( 'Y-m-d\TH:i:s', wfTimestamp( TS_UNIX, $timestamp ) );
 	}
 
 	/**

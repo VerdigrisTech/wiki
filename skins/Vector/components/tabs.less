@@ -1,6 +1,6 @@
-/*
-Styling for namespace tabs (page, discussion) and views (read, edit, view history, watch and other actions)
-*/
+/**
+ * Styling for namespace tabs (page, discussion) and views (read, edit, view history, watch and other actions)
+ */
 
 /* Navigation Labels */
 div.vectorTabs h3 {
@@ -54,7 +54,7 @@ div.vectorTabs {
 	li {
 		&.new {
 			a,
-			a:visited{
+			a:visited {
 				color: #a55858;
 			}
 		}
@@ -62,8 +62,8 @@ div.vectorTabs {
 		&.selected {
 			.background-image('images/tab-current-fade.png');
 			a,
-			a:visited{
-				color: #333;
+			a:visited {
+				color: #222;
 				text-decoration: none;
 			}
 		}
@@ -97,8 +97,9 @@ div.vectorTabs {
 		.background-image('images/tab-break.png');
 		background-position: bottom right;
 		background-repeat: no-repeat;
+		height: 100%;
 
-		a  {
+		a {
 			/* For IE6, overridden later to display:block by modern browsers */
 			display: inline-block;
 			padding-top: 1.25em;
@@ -134,7 +135,6 @@ div#mw-head div.vectorMenu h3 {
 	.background-image('images/tab-break.png');
 	background-repeat: no-repeat;
 	background-position: bottom right;
-	margin-left: -1px;
 	font-size: 1em;
 	height: 2.5em;
 	// This effectively moves the "background border" outside of the element to act like a real
@@ -179,12 +179,15 @@ div.vectorMenu div.menu {
 	position: absolute;
 	top: 2.5em;
 	left: -1px;
-	background-color: white;
-	border: solid 1px silver;
+	background-color: @body-background-color;
+	border: 1px solid #a2a9b1;
 	border-top-width: 0;
 	clear: both;
+	box-shadow: 0 1px 1px 0 rgba( 0, 0, 0, 0.1 );
 	text-align: left;
 	display: none;
+	// overlap indicators (which has z-index 1, too)
+	z-index: 1;
 }
 
 /* Enable forcing showing of the menu for accessibility */
@@ -201,6 +204,8 @@ div.vectorMenu ul {
 	text-align: left;
 }
 
+// stylelint-disable selector-no-vendor-prefix, selector-type-no-unknown
+
 /* Fixes old versions of FireFox */
 div.vectorMenu ul,
 x:-moz-any-link {
@@ -213,6 +218,8 @@ x:-moz-any-link,
 x:default {
 	min-width: 0;
 }
+
+// stylelint-enable selector-no-vendor-prefix, selector-type-no-unknown
 
 div.vectorMenu li {
 	padding: 0;
@@ -238,8 +245,27 @@ div.vectorMenu li > a {
 
 div.vectorMenu li.selected a,
 div.vectorMenu li.selected a:visited {
-	color: #333;
+	color: #222;
 	text-decoration: none;
+}
+
+// Expand vectorMenu as basic tabs in IE6
+// (IE6 doesn't support :hover on DIV)
+* html div.vectorMenu div.menu {
+	display: block;
+	position: static;
+	border: 0;
+}
+* html div#mw-head div.vectorMenu h3 {
+	display: none;
+}
+* html div.vectorMenu li {
+	float: left;
+	line-height: 1.125em;
+	border-right: 1px solid #a7d7f9;
+}
+* html div.vectorMenu li a {
+	padding-top: 1.25em;
 }
 
 @import 'watchstar.less';

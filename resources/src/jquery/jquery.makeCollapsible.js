@@ -153,14 +153,17 @@
 	 */
 	function togglingHandler( $toggle, $collapsible, e, options ) {
 		var wasCollapsed, $textContainer, collapseText, expandText;
-
-		if ( options === undefined ) {
-			options = {};
-		}
+		options = options || {};
 
 		if ( e ) {
-			if ( e.type === 'click' && options.linksPassthru && $.nodeName( e.target, 'a' ) ) {
-				// Don't fire if a link was clicked, if requested  (for premade togglers by default)
+			if (
+				e.type === 'click' &&
+				options.linksPassthru &&
+				e.target.nodeName.toLowerCase() === 'a' &&
+				$( e.target ).attr( 'href' ) &&
+				$( e.target ).attr( 'href' ) !== '#'
+			) {
+				// Don't fire if a link with href !== '#' was clicked, if requested  (for premade togglers by default)
 				return;
 			} else if ( e.type === 'keypress' && e.which !== 13 && e.which !== 32 ) {
 				// Only handle keypresses on the "Enter" or "Space" keys
@@ -208,7 +211,7 @@
 	 * Enable collapsible-functionality on all elements in the collection.
 	 *
 	 * - Will prevent binding twice to the same element.
-	 * - Initial state is expanded by default, this can be overriden by adding class
+	 * - Initial state is expanded by default, this can be overridden by adding class
 	 *   "mw-collapsed" to the "mw-collapsible" element.
 	 * - Elements made collapsible have jQuery data "mw-made-collapsible" set to true.
 	 * - The inner content is wrapped in a "div.mw-collapsible-content" (except for tables and lists).
@@ -235,11 +238,9 @@
 	 * @chainable
 	 */
 	$.fn.makeCollapsible = function ( options ) {
-		if ( options === undefined ) {
-			options = {};
-		}
+		options = options || {};
 
-		return this.each( function () {
+		this.each( function () {
 			var $collapsible, collapseText, expandText, $caption, $toggle, actionHandler, buildDefaultToggleLink,
 				premadeToggleHandler, $toggleLink, $firstItem, collapsibleId, $customTogglers, firstval;
 
@@ -269,7 +270,11 @@
 			};
 			// Default toggle link. Only build it when needed to avoid jQuery memory leaks (event data).
 			buildDefaultToggleLink = function () {
-				return $( '<a href="#"></a>' )
+				return $( '<a>' )
+					.attr( {
+						role: 'button',
+						tabindex: 0
+					} )
 					.text( collapseText )
 					.wrap( '<span class="mw-collapsible-toggle"></span>' )
 						.parent()
@@ -313,6 +318,7 @@
 				// If this is not a custom case, do the default: wrap the
 				// contents and add the toggle link. Different elements are
 				// treated differently.
+
 				if ( $collapsible.is( 'table' ) ) {
 
 					// If the table has a caption, collapse to the caption
@@ -330,7 +336,7 @@
 								.prop( 'tabIndex', 0 );
 						}
 					} else {
-						// The toggle-link will be in one the the cells (td or th) of the first row
+						// The toggle-link will be in one of the cells (td or th) of the first row
 						$firstItem = $collapsible.find( 'tr:first th, tr:first td' );
 						$toggle = $firstItem.find( '> .mw-collapsible-toggle' );
 
@@ -344,6 +350,13 @@
 						}
 					}
 
+				} else if ( $collapsible.parent().is( 'li' ) &&
+					$collapsible.parent().children( '.mw-collapsible' ).length === 1 &&
+					$collapsible.find( '> .mw-collapsible-toggle' ).length === 0
+				) {
+					// special case of one collapsible in <li> tag
+					$toggleLink = buildDefaultToggleLink();
+					$collapsible.before( $toggleLink );
 				} else if ( $collapsible.is( 'ul' ) || $collapsible.is( 'ol' ) ) {
 					// The toggle-link will be in the first list-item
 					$firstItem = $collapsible.find( 'li:first' );
@@ -387,13 +400,39 @@
 				}
 			}
 
+			$( this ).data( 'mw-collapsible', {
+				collapse: function () {
+					actionHandler.call( $toggleLink.get( 0 ), null, { instantHide: true, wasCollapsed: false } );
+				},
+				expand: function () {
+					actionHandler.call( $toggleLink.get( 0 ), null, { instantHide: true, wasCollapsed: true } );
+				},
+				toggle: function () {
+					actionHandler.call( $toggleLink.get( 0 ), null, null );
+				}
+			} );
+
 			// Initial state
 			if ( options.collapsed || $collapsible.hasClass( 'mw-collapsed' ) ) {
 				// One toggler can hook to multiple elements, and one element can have
 				// multiple togglers. This is the sanest way to handle that.
 				actionHandler.call( $toggleLink.get( 0 ), null, { instantHide: true, wasCollapsed: false } );
 			}
+
 		} );
+
+		/**
+		 * Fired after collapsible content has been initialized
+		 *
+		 * This gives an option to modify the collapsible behavior.
+		 *
+		 * @event wikipage_collapsibleContent
+		 * @member mw.hook
+		 * @param {jQuery} $content All the elements that have been made collapsible
+		 */
+		mw.hook( 'wikipage.collapsibleContent' ).fire( this );
+
+		return this;
 	};
 
 	/**

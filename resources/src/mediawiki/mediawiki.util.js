@@ -33,7 +33,7 @@
 				];
 
 				for ( i = 0, l = selectors.length; i < l; i++ ) {
-					$node = $( selectors[i] );
+					$node = $( selectors[ i ] );
 					if ( $node.length ) {
 						return $node.first();
 					}
@@ -50,12 +50,26 @@
 		 * Encode the string like PHP's rawurlencode
 		 *
 		 * @param {string} str String to be encoded.
+		 * @return {string} Encoded string
 		 */
 		rawurlencode: function ( str ) {
 			str = String( str );
 			return encodeURIComponent( str )
 				.replace( /!/g, '%21' ).replace( /'/g, '%27' ).replace( /\(/g, '%28' )
 				.replace( /\)/g, '%29' ).replace( /\*/g, '%2A' ).replace( /~/g, '%7E' );
+		},
+
+		/**
+		 * Encode the string like Sanitizer::escapeId in PHP
+		 *
+		 * @param {string} str String to be encoded.
+		 * @return {string} Encoded string
+		 */
+		escapeId: function ( str ) {
+			str = String( str );
+			return util.rawurlencode( str.replace( / /g, '_' ) )
+				.replace( /%3A/g, ':' )
+				.replace( /%/g, '.' );
 		},
 
 		/**
@@ -68,6 +82,7 @@
 		 * of `wfUrlencode` in PHP.
 		 *
 		 * @param {string} str String to be encoded.
+		 * @return {string} Encoded string
 		 */
 		wikiUrlencode: function ( str ) {
 			return util.rawurlencode( str )
@@ -82,25 +97,47 @@
 				.replace( /%29/g, ')' )
 				.replace( /%2C/g, ',' )
 				.replace( /%2F/g, '/' )
+				.replace( /%7E/g, '~' )
 				.replace( /%3A/g, ':' );
 		},
 
 		/**
 		 * Get the link to a page name (relative to `wgServer`),
 		 *
-		 * @param {string} str Page name
+		 * @param {string|null} [pageName=wgPageName] Page name
 		 * @param {Object} [params] A mapping of query parameter names to values,
 		 *  e.g. `{ action: 'edit' }`
-		 * @return {string} Url of the page with name of `str`
+		 * @return {string} Url of the page with name of `pageName`
 		 */
-		getUrl: function ( str, params ) {
-			var url = mw.config.get( 'wgArticlePath' ).replace(
-				'$1',
-				util.wikiUrlencode( typeof str === 'string' ? str : mw.config.get( 'wgPageName' ) )
-			);
+		getUrl: function ( pageName, params ) {
+			var titleFragmentStart, url, query,
+				fragment = '',
+				title = typeof pageName === 'string' ? pageName : mw.config.get( 'wgPageName' );
 
-			if ( params && !$.isEmptyObject( params ) ) {
-				url += ( url.indexOf( '?' ) !== -1 ? '&' : '?' ) + $.param( params );
+			// Find any fragment
+			titleFragmentStart = title.indexOf( '#' );
+			if ( titleFragmentStart !== -1 ) {
+				fragment = title.slice( titleFragmentStart + 1 );
+				// Exclude the fragment from the page name
+				title = title.slice( 0, titleFragmentStart );
+			}
+
+			// Produce query string
+			if ( params ) {
+				query = $.param( params );
+			}
+			if ( query ) {
+				url = title ?
+					util.wikiScript() + '?title=' + util.wikiUrlencode( title ) + '&' + query :
+					util.wikiScript() + '?' + query;
+			} else {
+				url = mw.config.get( 'wgArticlePath' )
+					.replace( '$1', util.wikiUrlencode( title ).replace( /\$/g, '$$$$' ) );
+			}
+
+			// Append the encoded fragment
+			if ( fragment.length ) {
+				url += '#' + util.escapeId( fragment );
 			}
 
 			return url;
@@ -111,8 +148,8 @@
 		 * For index.php use `mw.config.get( 'wgScript' )`.
 		 *
 		 * @since 1.18
-		 * @param str string Name of script (eg. 'api'), defaults to 'index'
-		 * @return string Address to script (eg. '/w/api.php' )
+		 * @param {string} str Name of script (e.g. 'api'), defaults to 'index'
+		 * @return {string} Address to script (e.g. '/w/api.php' )
 		 */
 		wikiScript: function ( str ) {
 			str = str || 'index';
@@ -121,8 +158,7 @@
 			} else if ( str === 'load' ) {
 				return mw.config.get( 'wgLoadScript' );
 			} else {
-				return mw.config.get( 'wgScriptPath' ) + '/' + str +
-					mw.config.get( 'wgScriptExtension' );
+				return mw.config.get( 'wgScriptPath' ) + '/' + str + '.php';
 			}
 		},
 
@@ -132,7 +168,7 @@
 		 * This function returns the styleSheet object for convience (due to cross-browsers
 		 * difference as to where it is located).
 		 *
-		 *     var sheet = mw.util.addCSS( '.foobar { display: none; }' );
+		 *     var sheet = util.addCSS( '.foobar { display: none; }' );
 		 *     $( foo ).click( function () {
 		 *         // Toggle the sheet on and off
 		 *         sheet.disabled = !sheet.disabled;
@@ -151,20 +187,18 @@
 		 * Returns null if not found.
 		 *
 		 * @param {string} param The parameter name.
-		 * @param {string} [url=document.location.href] URL to search through, defaulting to the current document's URL.
+		 * @param {string} [url=location.href] URL to search through, defaulting to the current browsing location.
 		 * @return {Mixed} Parameter value or null.
 		 */
 		getParamValue: function ( param, url ) {
-			if ( url === undefined ) {
-				url = document.location.href;
-			}
 			// Get last match, stop at hash
-			var	re = new RegExp( '^[^#]*[&?]' + $.escapeRE( param ) + '=([^&#]*)' ),
-				m = re.exec( url );
+			var	re = new RegExp( '^[^#]*[&?]' + mw.RegExp.escape( param ) + '=([^&#]*)' ),
+				m = re.exec( url !== undefined ? url : location.href );
+
 			if ( m ) {
 				// Beware that decodeURIComponent is not required to understand '+'
 				// by spec, as encodeURIComponent does not produce it.
-				return decodeURIComponent( m[1].replace( /\+/g, '%20' ) );
+				return decodeURIComponent( m[ 1 ].replace( /\+/g, '%20' ) );
 			}
 			return null;
 		},
@@ -196,7 +230,7 @@
 		 * p-cactions (Content actions), p-personal (Personal tools),
 		 * p-navigation (Navigation), p-tb (Toolbox)
 		 *
-		 * The first three paramters are required, the others are optional and
+		 * The first three parameters are required, the others are optional and
 		 * may be null. Though providing an id and tooltip is recommended.
 		 *
 		 * By default the new link will be added to the end of the list. To
@@ -204,10 +238,20 @@
 		 * (e.g. `document.getElementById( 'foobar' )`) or a jQuery-selector
 		 * (e.g. `'#foobar'`) for that item.
 		 *
-		 *     mw.util.addPortletLink(
-		 *         'p-tb', 'http://mediawiki.org/',
-		 *         'MediaWiki.org', 't-mworg', 'Go to MediaWiki.org ', 'm', '#t-print'
+		 *     util.addPortletLink(
+		 *         'p-tb', 'https://www.mediawiki.org/',
+		 *         'mediawiki.org', 't-mworg', 'Go to mediawiki.org', 'm', '#t-print'
 		 *     );
+		 *
+		 *     var node = util.addPortletLink(
+		 *         'p-tb',
+		 *         new mw.Title( 'Special:Example' ).getUrl(),
+		 *         'Example'
+		 *     );
+		 *     $( node ).on( 'click', function ( e ) {
+		 *         console.log( 'Example' );
+		 *         e.preventDefault();
+		 *     } );
 		 *
 		 * @param {string} portlet ID of the target portlet ( 'p-cactions' or 'p-personal' etc.)
 		 * @param {string} href Link URL
@@ -228,7 +272,7 @@
 		addPortletLink: function ( portlet, href, text, id, tooltip, accesskey, nextnode ) {
 			var $item, $link, $portlet, $ul;
 
-			// Check if there's atleast 3 arguments to prevent a TypeError
+			// Check if there's at least 3 arguments to prevent a TypeError
 			if ( arguments.length < 3 ) {
 				return null;
 			}
@@ -286,30 +330,38 @@
 			}
 
 			if ( tooltip ) {
-				$link.attr( 'title', tooltip ).updateTooltipAccessKeys();
+				$link.attr( 'title', tooltip );
 			}
 
 			if ( nextnode ) {
+				// Case: nextnode is a DOM element (was the only option before MW 1.17, in wikibits.js)
+				// Case: nextnode is a CSS selector for jQuery
 				if ( nextnode.nodeType || typeof nextnode === 'string' ) {
-					// nextnode is a DOM element (was the only option before MW 1.17, in wikibits.js)
-					// or nextnode is a CSS selector for jQuery
 					nextnode = $ul.find( nextnode );
-				} else if ( !nextnode.jquery || ( nextnode.length && nextnode[0].parentNode !== $ul[0] ) ) {
-					// Fallback
-					$ul.append( $item );
-					return $item[0];
+				} else if ( !nextnode.jquery ) {
+					// Error: Invalid nextnode
+					nextnode = undefined;
 				}
-				if ( nextnode.length === 1 ) {
-					// nextnode is a jQuery object that represents exactly one element
-					nextnode.before( $item );
-					return $item[0];
+				if ( nextnode && ( nextnode.length !== 1 || nextnode[ 0 ].parentNode !== $ul[ 0 ] ) ) {
+					// Error: nextnode must resolve to a single node
+					// Error: nextnode must have the associated <ul> as its parent
+					nextnode = undefined;
 				}
 			}
 
-			// Fallback (this is the default behavior)
-			$ul.append( $item );
-			return $item[0];
+			// Case: nextnode is a jQuery-wrapped DOM element
+			if ( nextnode ) {
+				nextnode.before( $item );
+			} else {
+				// Fallback (this is the default behavior)
+				$ul.append( $item );
+			}
 
+			// Update tooltip for the access key after inserting into DOM
+			// to get a localized access key label (T69946).
+			$link.updateTooltipAccessKeys();
+
+			return $item[ 0 ];
 		},
 
 		/**
@@ -332,12 +384,12 @@
 
 			// HTML5 defines a string as valid e-mail address if it matches
 			// the ABNF:
-			//	1 * ( atext / "." ) "@" ldh-str 1*( "." ldh-str )
+			//     1 * ( atext / "." ) "@" ldh-str 1*( "." ldh-str )
 			// With:
 			// - atext   : defined in RFC 5322 section 3.2.3
 			// - ldh-str : defined in RFC 1034 section 3.5
 			//
-			// (see STD 68 / RFC 5234 http://tools.ietf.org/html/std68)
+			// (see STD 68 / RFC 5234 https://tools.ietf.org/html/std68)
 			// First, define the RFC 5322 'atext' which is pretty easy:
 			// atext = ALPHA / DIGIT / ; Printable US-ASCII
 			//     "!" / "#" /    ; characters not including
@@ -353,30 +405,25 @@
 			rfc5322Atext = 'a-z0-9!#$%&\'*+\\-/=?^_`{|}~';
 
 			// Next define the RFC 1034 'ldh-str'
-			//	<domain> ::= <subdomain> | " "
-			//	<subdomain> ::= <label> | <subdomain> "." <label>
-			//	<label> ::= <letter> [ [ <ldh-str> ] <let-dig> ]
-			//	<ldh-str> ::= <let-dig-hyp> | <let-dig-hyp> <ldh-str>
-			//	<let-dig-hyp> ::= <let-dig> | "-"
-			//	<let-dig> ::= <letter> | <digit>
+			//     <domain> ::= <subdomain> | " "
+			//     <subdomain> ::= <label> | <subdomain> "." <label>
+			//     <label> ::= <letter> [ [ <ldh-str> ] <let-dig> ]
+			//     <ldh-str> ::= <let-dig-hyp> | <let-dig-hyp> <ldh-str>
+			//     <let-dig-hyp> ::= <let-dig> | "-"
+			//     <let-dig> ::= <letter> | <digit>
 			rfc1034LdhStr = 'a-z0-9\\-';
 
 			html5EmailRegexp = new RegExp(
 				// start of string
-				'^'
-				+
+				'^' +
 				// User part which is liberal :p
-				'[' + rfc5322Atext + '\\.]+'
-				+
+				'[' + rfc5322Atext + '\\.]+' +
 				// 'at'
-				'@'
-				+
+				'@' +
 				// Domain first part
-				'[' + rfc1034LdhStr + ']+'
-				+
+				'[' + rfc1034LdhStr + ']+' +
 				// Optional second part and following are separated by a dot
-				'(?:\\.[' + rfc1034LdhStr + ']+)*'
-				+
+				'(?:\\.[' + rfc1034LdhStr + ']+)*' +
 				// End of string
 				'$',
 				// RegExp is case insensitive
@@ -393,15 +440,17 @@
 		 * @return {boolean}
 		 */
 		isIPv4Address: function ( address, allowBlock ) {
+			var block, RE_IP_BYTE, RE_IP_ADD;
+
 			if ( typeof address !== 'string' ) {
 				return false;
 			}
 
-			var	block = allowBlock ? '(?:\\/(?:3[0-2]|[12]?\\d))?' : '',
-				RE_IP_BYTE = '(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|0?[0-9]?[0-9])',
-				RE_IP_ADD = '(?:' + RE_IP_BYTE + '\\.){3}' + RE_IP_BYTE;
+			block = allowBlock ? '(?:\\/(?:3[0-2]|[12]?\\d))?' : '';
+			RE_IP_BYTE = '(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|0?[0-9]?[0-9])';
+			RE_IP_ADD = '(?:' + RE_IP_BYTE + '\\.){3}' + RE_IP_BYTE;
 
-			return address.search( new RegExp( '^' + RE_IP_ADD + block + '$' ) ) !== -1;
+			return ( new RegExp( '^' + RE_IP_ADD + block + '$' ).test( address ) );
 		},
 
 		/**
@@ -412,29 +461,47 @@
 		 * @return {boolean}
 		 */
 		isIPv6Address: function ( address, allowBlock ) {
+			var block, RE_IPV6_ADD;
+
 			if ( typeof address !== 'string' ) {
 				return false;
 			}
 
-			var	block = allowBlock ? '(?:\\/(?:12[0-8]|1[01][0-9]|[1-9]?\\d))?' : '',
-				RE_IPV6_ADD =
-			'(?:' + // starts with "::" (including "::")
-			':(?::|(?::' + '[0-9A-Fa-f]{1,4}' + '){1,7})' +
-			'|' + // ends with "::" (except "::")
-			'[0-9A-Fa-f]{1,4}' + '(?::' + '[0-9A-Fa-f]{1,4}' + '){0,6}::' +
-			'|' + // contains no "::"
-			'[0-9A-Fa-f]{1,4}' + '(?::' + '[0-9A-Fa-f]{1,4}' + '){7}' +
-			')';
+			block = allowBlock ? '(?:\\/(?:12[0-8]|1[01][0-9]|[1-9]?\\d))?' : '';
+			RE_IPV6_ADD =
+				'(?:' + // starts with "::" (including "::")
+				':(?::|(?::' + '[0-9A-Fa-f]{1,4}' + '){1,7})' +
+				'|' + // ends with "::" (except "::")
+				'[0-9A-Fa-f]{1,4}' + '(?::' + '[0-9A-Fa-f]{1,4}' + '){0,6}::' +
+				'|' + // contains no "::"
+				'[0-9A-Fa-f]{1,4}' + '(?::' + '[0-9A-Fa-f]{1,4}' + '){7}' +
+				')';
 
-			if ( address.search( new RegExp( '^' + RE_IPV6_ADD + block + '$' ) ) !== -1 ) {
+			if ( new RegExp( '^' + RE_IPV6_ADD + block + '$' ).test( address ) ) {
 				return true;
 			}
 
-			RE_IPV6_ADD = // contains one "::" in the middle (single '::' check below)
-				'[0-9A-Fa-f]{1,4}' + '(?:::?' + '[0-9A-Fa-f]{1,4}' + '){1,6}';
+			// contains one "::" in the middle (single '::' check below)
+			RE_IPV6_ADD = '[0-9A-Fa-f]{1,4}' + '(?:::?' + '[0-9A-Fa-f]{1,4}' + '){1,6}';
 
-			return address.search( new RegExp( '^' + RE_IPV6_ADD + block + '$' ) ) !== -1
-				&& address.search( /::/ ) !== -1 && address.search( /::.*::/ ) === -1;
+			return (
+				new RegExp( '^' + RE_IPV6_ADD + block + '$' ).test( address ) &&
+				/::/.test( address ) &&
+				!/::.*::/.test( address )
+			);
+		},
+
+		/**
+		 * Check whether a string is an IP address
+		 *
+		 * @since 1.25
+		 * @param {string} address String to check
+		 * @param {boolean} allowBlock True if a block of IPs should be allowed
+		 * @return {boolean}
+		 */
+		isIPAddress: function ( address, allowBlock ) {
+			return util.isIPv4Address( address, allowBlock ) ||
+				util.isIPv6Address( address, allowBlock );
 		}
 	};
 
@@ -446,38 +513,10 @@
 	mw.log.deprecate( util, 'wikiGetlink', util.getUrl, 'Use mw.util.getUrl instead.' );
 
 	/**
-	 * Access key prefix. Might be wrong for browsers implementing the accessKeyLabel property.
-	 * @property {string} tooltipAccessKeyPrefix
-	 * @deprecated since 1.24 Use the module jquery.accessKeyLabel instead.
-	 */
-	mw.log.deprecate( util, 'tooltipAccessKeyPrefix', $.fn.updateTooltipAccessKeys.getAccessKeyPrefix(), 'Use jquery.accessKeyLabel instead.' );
-
-	/**
-	 * Regex to match accesskey tooltips.
-	 *
-	 * Should match:
-	 *
-	 * - "[ctrl-option-x]"
-	 * - "[alt-shift-x]"
-	 * - "[ctrl-alt-x]"
-	 * - "[ctrl-x]"
-	 *
-	 * The accesskey is matched in group $6.
-	 *
-	 * Will probably not work for browsers implementing the accessKeyLabel property.
-	 *
-	 * @property {RegExp} tooltipAccessKeyRegexp
-	 * @deprecated since 1.24 Use the module jquery.accessKeyLabel instead.
-	 */
-	mw.log.deprecate( util, 'tooltipAccessKeyRegexp', /\[(ctrl-)?(option-)?(alt-)?(shift-)?(esc-)?(.)\]$/, 'Use jquery.accessKeyLabel instead.' );
-
-	/**
 	 * Add the appropriate prefix to the accesskey shown in the tooltip.
 	 *
 	 * If the `$nodes` parameter is given, only those nodes are updated;
-	 * otherwise, depending on browser support, we update either all elements
-	 * with accesskeys on the page or a bunch of elements which are likely to
-	 * have them on core skins.
+	 * otherwise we update all elements with accesskeys on the page.
 	 *
 	 * @method updateTooltipAccessKeys
 	 * @param {Array|jQuery} [$nodes] A jQuery object, or array of nodes to update.
@@ -485,19 +524,7 @@
 	 */
 	mw.log.deprecate( util, 'updateTooltipAccessKeys', function ( $nodes ) {
 		if ( !$nodes ) {
-			if ( document.querySelectorAll ) {
-				// If we're running on a browser where we can do this efficiently,
-				// just find all elements that have accesskeys. We can't use jQuery's
-				// polyfill for the selector since looping over all elements on page
-				// load might be too slow.
-				$nodes = $( document.querySelectorAll( '[accesskey]' ) );
-			} else {
-				// Otherwise go through some elements likely to have accesskeys rather
-				// than looping over all of them. Unfortunately this will not fully
-				// work for custom skins with different HTML structures. Input, label
-				// and button should be rare enough that no optimizations are needed.
-				$nodes = $( '#column-one a, #mw-head a, #mw-panel a, #p-logo a, input, label, button' );
-			}
+			$nodes = $( '[accesskey]' );
 		} else if ( !( $nodes instanceof $ ) ) {
 			$nodes = $( $nodes );
 		}
@@ -527,5 +554,6 @@
 	}, 'Use mw.notify instead.' );
 
 	mw.util = util;
+	module.exports = util;
 
 }( mediaWiki, jQuery ) );

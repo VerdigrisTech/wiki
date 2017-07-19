@@ -2,6 +2,10 @@
 	'use strict';
 
 	/**
+	 * Fired after an edit was successfully saved.
+	 *
+	 * Does not fire for null edits.
+	 *
 	 * @event postEdit
 	 * @member mw.hook
 	 * @param {Object} [data] Optional data
@@ -21,8 +25,20 @@
 	var config = mw.config.get( [ 'wgAction', 'wgCurRevisionId' ] ),
 		// This should match EditPage::POST_EDIT_COOKIE_KEY_PREFIX:
 		cookieKey = 'PostEditRevision' + config.wgCurRevisionId,
-		cookieVal = mw.cookie.get( cookieKey ),
-		$div, id;
+		cookieVal, $div, id;
+
+	function removeConfirmation() {
+		$div.remove();
+		mw.hook( 'postEdit.afterRemoval' ).fire();
+	}
+
+	function fadeOutConfirmation() {
+		clearTimeout( id );
+		$div.find( '.postedit' ).addClass( 'postedit postedit-faded' );
+		setTimeout( removeConfirmation, 500 );
+
+		return false;
+	}
 
 	function showConfirmation( data ) {
 		data = data || {};
@@ -30,14 +46,7 @@
 			data.message = $.parseHTML( mw.message( 'postedit-confirmation-saved', data.user || mw.user ).escaped() );
 		}
 
-		$div = $(
-			'<div class="postedit-container">' +
-				'<div class="postedit">' +
-					'<div class="postedit-icon postedit-icon-checkmark postedit-content"></div>' +
-					'<a href="#" class="postedit-close">&times;</a>' +
-				'</div>' +
-			'</div>'
-		);
+		$div = mw.template.get( 'mediawiki.action.view.postEdit', 'postEdit.html' ).render();
 
 		if ( typeof data.message === 'string' ) {
 			$div.find( '.postedit-content' ).text( data.message );
@@ -52,35 +61,28 @@
 		id = setTimeout( fadeOutConfirmation, 3000 );
 	}
 
-	function fadeOutConfirmation() {
-		clearTimeout( id );
-		$div.find( '.postedit' ).addClass( 'postedit postedit-faded' );
-		setTimeout( removeConfirmation, 500 );
-
-		return false;
-	}
-
-	function removeConfirmation() {
-		$div.remove();
-		mw.hook( 'postEdit.afterRemoval' ).fire();
-	}
-
 	mw.hook( 'postEdit' ).add( showConfirmation );
 
-	if ( config.wgAction === 'view' && cookieVal ) {
-		mw.config.set( 'wgPostEdit', true );
+	// Only when viewing wiki pages, that exist
+	// (E.g. not on special pages or non-view actions)
+	if ( config.wgCurRevisionId && config.wgAction === 'view' ) {
+		cookieVal = mw.cookie.get( cookieKey );
+		if ( cookieVal ) {
+			mw.config.set( 'wgPostEdit', true );
 
-		mw.hook( 'postEdit' ).fire( {
-			// The following messages can be used here:
-			// postedit-confirmation-saved
-			// postedit-confirmation-created
-			// postedit-confirmation-restored
-			'message': mw.msg(
-				'postedit-confirmation-' + cookieVal,
-				mw.user
-			)
-		} );
-		mw.cookie.set( cookieKey, null );
+			mw.hook( 'postEdit' ).fire( {
+				// The following messages can be used here:
+				// postedit-confirmation-saved
+				// postedit-confirmation-created
+				// postedit-confirmation-restored
+				message: mw.msg(
+					'postedit-confirmation-' + cookieVal,
+					mw.user
+				)
+			} );
+
+			mw.cookie.set( cookieKey, null );
+		}
 	}
 
-} ( mediaWiki, jQuery ) );
+}( mediaWiki, jQuery ) );

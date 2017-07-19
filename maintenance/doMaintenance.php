@@ -25,6 +25,7 @@
  * @file
  * @ingroup Maintenance
  */
+use MediaWiki\MediaWikiServices;
 
 if ( !defined( 'RUN_MAINTENANCE_IF_MAIN' ) ) {
 	echo "This file must be included after Maintenance.php\n";
@@ -56,11 +57,11 @@ $self = $maintenance->getName();
 
 # Start the autoloader, so that extensions can derive classes from core files
 require_once "$IP/includes/AutoLoader.php";
-# Stub the profiler
-require_once "$IP/includes/profiler/Profiler.php";
+# Grab profiling functions
+require_once "$IP/includes/profiler/ProfilerFunctions.php";
 
 # Start the profiler
-$wgProfiler = array();
+$wgProfiler = [];
 if ( file_exists( "$IP/StartProfiler.php" ) ) {
 	require "$IP/StartProfiler.php";
 }
@@ -68,6 +69,7 @@ if ( file_exists( "$IP/StartProfiler.php" ) ) {
 // Some other requires
 require_once "$IP/includes/Defines.php";
 require_once "$IP/includes/DefaultSettings.php";
+require_once "$IP/includes/GlobalFunctions.php";
 
 # Load composer's autoloader if present
 if ( is_readable( "$IP/vendor/autoload.php" ) ) {
@@ -91,29 +93,34 @@ if ( $maintenance->getDbType() === Maintenance::DB_NONE ) {
 	}
 }
 
-$maintenance->setConfig( ConfigFactory::getDefaultInstance()->makeConfig( 'main' ) );
 $maintenance->finalSetup();
 // Some last includes
 require_once "$IP/includes/Setup.php";
 
+// Initialize main config instance
+$maintenance->setConfig( MediaWikiServices::getInstance()->getMainConfig() );
+
+// Sanity-check required extensions are installed
+$maintenance->checkRequiredExtensions();
+
+// A good time when no DBs have writes pending is around lag checks.
+// This avoids having long running scripts just OOM and lose all the updates.
+$maintenance->setAgentAndTriggers();
+
 // Do the work
-try {
-	$maintenance->execute();
+$maintenance->execute();
 
-	// Potentially debug globals
-	$maintenance->globals();
+// Potentially debug globals
+$maintenance->globals();
 
-	// Perform deferred updates.
-	DeferredUpdates::doUpdates( 'commit' );
+// Perform deferred updates.
+$lbFactory = MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
+$lbFactory->commitMasterChanges( $maintClass );
+DeferredUpdates::doUpdates();
 
-	// log profiling info
-	wfLogProfilingData();
+// log profiling info
+wfLogProfilingData();
 
-	// Commit and close up!
-	$factory = wfGetLBFactory();
-	$factory->commitMasterChanges();
-	$factory->shutdown();
-} catch ( MWException $mwe ) {
-	echo $mwe->getText();
-	exit( 1 );
-}
+// Commit and close up!
+$lbFactory->commitMasterChanges( 'doMaintenance' );
+$lbFactory->shutdown( $lbFactory::SHUTDOWN_NO_CHRONPROT );

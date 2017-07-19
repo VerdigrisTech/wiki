@@ -1,3 +1,9 @@
 {
-	"skinname-modern": "Модерен"
+	"@metadata": {
+		"authors": [
+			"StanProg"
+		]
+	},
+	"skinname-modern": "Модерен",
+	"modern-desc": "Синьо-сив облик със странична и горна лента. Производна на MonoBook"
 }

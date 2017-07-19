@@ -9,7 +9,8 @@ jQuery( function ( $ ) {
 	/**
 	 * @ignore
 	 * @context {Element} input
-	 * @param e {jQuery.Event}
+	 * @param {jQuery.Event} e
+	 * @return {boolean} False to cancel the default event
 	 */
 	function updateDiffRadios() {
 		var nextState = 'before',
@@ -85,7 +86,8 @@ jQuery( function ( $ ) {
 				$copyForm.find( 'input[name^="ids["]:checked' ).prop( 'checked', false );
 
 			// Remove diff=&oldid=, change action=historysubmit to revisiondelete, remove revisiondelete
-			} else if ( $historySubmitter.hasClass( 'mw-history-revisiondelete-button' ) ) {
+			} else if ( $historySubmitter.hasClass( 'mw-history-revisiondelete-button' ) ||
+					$historySubmitter.hasClass( 'mw-history-editchangetags-button' ) ) {
 				$copyRadios.remove();
 				$copyAction.val( $historySubmitter.attr( 'name' ) );
 				$copyForm.find( ':submit' ).remove();

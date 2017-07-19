@@ -81,7 +81,7 @@ class ArchivedFile {
 	/** @var string SHA-1 hash of file content */
 	private $sha1;
 
-	/** @var string Number of pages of a multipage document, or false for
+	/** @var int|false Number of pages of a multipage document, or false for
 	 * documents which aren't multipage documents
 	 */
 	private $pageCount;
@@ -100,8 +100,9 @@ class ArchivedFile {
 	 * @param Title $title
 	 * @param int $id
 	 * @param string $key
+	 * @param string $sha1
 	 */
-	function __construct( $title, $id = 0, $key = '' ) {
+	function __construct( $title, $id = 0, $key = '', $sha1 = '' ) {
 		$this->id = -1;
 		$this->title = false;
 		$this->name = false;
@@ -136,7 +137,11 @@ class ArchivedFile {
 			$this->key = $key;
 		}
 
-		if ( !$id && !$key && !( $title instanceof Title ) ) {
+		if ( $sha1 ) {
+			$this->sha1 = $sha1;
+		}
+
+		if ( !$id && !$key && !( $title instanceof Title ) && !$sha1 ) {
 			throw new MWException( "No specifications provided to ArchivedFile constructor." );
 		}
 	}
@@ -150,7 +155,7 @@ class ArchivedFile {
 		if ( $this->dataLoaded ) {
 			return true;
 		}
-		$conds = array();
+		$conds = [];
 
 		if ( $this->id > 0 ) {
 			$conds['fa_id'] = $this->id;
@@ -162,6 +167,9 @@ class ArchivedFile {
 		if ( $this->title ) {
 			$conds['fa_name'] = $this->title->getDBkey();
 		}
+		if ( $this->sha1 ) {
+			$conds['fa_sha1'] = $this->sha1;
+		}
 
 		if ( !count( $conds ) ) {
 			throw new MWException( "No specific information for retrieving archived file" );
@@ -169,13 +177,13 @@ class ArchivedFile {
 
 		if ( !$this->title || $this->title->getNamespace() == NS_FILE ) {
 			$this->dataLoaded = true; // set it here, to have also true on miss
-			$dbr = wfGetDB( DB_SLAVE );
+			$dbr = wfGetDB( DB_REPLICA );
 			$row = $dbr->selectRow(
 				'filearchive',
 				self::selectFields(),
 				$conds,
 				__METHOD__,
-				array( 'ORDER BY' => 'fa_timestamp DESC' )
+				[ 'ORDER BY' => 'fa_timestamp DESC' ]
 			);
 			if ( !$row ) {
 				// this revision does not exist?
@@ -210,7 +218,7 @@ class ArchivedFile {
 	 * @return array
 	 */
 	static function selectFields() {
-		return array(
+		return [
 			'fa_id',
 			'fa_name',
 			'fa_archive_name',
@@ -231,7 +239,7 @@ class ArchivedFile {
 			'fa_deleted',
 			'fa_deleted_timestamp', /* Used by LocalFileRestoreBatch */
 			'fa_sha1',
-		);
+		];
 	}
 
 	/**
@@ -417,6 +425,7 @@ class ArchivedFile {
 	 */
 	function pageCount() {
 		if ( !isset( $this->pageCount ) ) {
+			// @FIXME: callers expect File objects
 			if ( $this->getHandler() && $this->handler->isMultiPage( $this ) ) {
 				$this->pageCount = $this->handler->pageCount( $this );
 			} else {
@@ -477,32 +486,16 @@ class ArchivedFile {
 		if ( $type == 'text' ) {
 			return $this->user_text;
 		} elseif ( $type == 'id' ) {
-			return $this->user;
+			return (int)$this->user;
 		}
 
 		throw new MWException( "Unknown type '$type'." );
 	}
 
 	/**
-	 * Return the user name of the uploader.
-	 *
-	 * @deprecated since 1.23 Use getUser( 'text' ) instead.
-	 * @return string
-	 */
-	public function getUserText() {
-		wfDeprecated( __METHOD__, '1.23' );
-		$this->load();
-		if ( $this->isDeleted( File::DELETED_USER ) ) {
-			return 0;
-		} else {
-			return $this->user_text;
-		}
-	}
-
-	/**
 	 * Return upload description.
 	 *
-	 * @return string
+	 * @return string|int
 	 */
 	public function getDescription() {
 		$this->load();
@@ -579,6 +572,6 @@ class ArchivedFile {
 		$this->load();
 
 		$title = $this->getTitle();
-		return Revision::userCanBitfield( $this->deleted, $field, $user, $title ? : null );
+		return Revision::userCanBitfield( $this->deleted, $field, $user, $title ?: null );
 	}
 }
