@@ -164,7 +164,7 @@ $wgGLAllowAccountCreation = true;
 $wgShowExceptionDetails = true;
 
 ## WikiEditor extension which is the same editor used in Wikipedia.
-require_once "$IP/extensions/WikiEditor/WikiEditor.php";
+wfLoadExtension('WikiEditor');
 
 # Use the advanced editor by default.
 $wgDefaultUserOptions['usebetatoolbar'] = 1;
@@ -172,6 +172,9 @@ $wgDefaultUserOptions['usebetatoolbar-cgd'] = 1;
 
 # Displays the Preview and Changes tabs.
 $wgDefaultUserOptions['wikieditor-preview'] = 1;
+
+# Displays the Publish and Cancel buttons on the top right side
+$wgDefaultUserOptions['wikieditor-publish'] = 1;
 
 ## File uploads are not stored on disk but to AWS S3 bucket due to limitation
 ## with Heroku.
