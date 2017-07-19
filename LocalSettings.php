@@ -76,7 +76,7 @@ $wgObjectCaches['redis'] = array(
 	'class'								=> 'RedisBagOStuff',
 	'servers'							=> array( getenv('REDIS_HOST') ),
 	'connectTimeout'			=> 1,
-	'persistent'					=> false,
+	'persistent'					=> true,
 	'password'						=> getenv('REDIS_SECRET')
 	// 'automaticFailOver' => true,
 );
