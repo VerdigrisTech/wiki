@@ -178,32 +178,32 @@ $wgDefaultUserOptions['wikieditor-publish'] = 1;
 
 ## File uploads are not stored on disk but to AWS S3 bucket due to limitation
 ## with Heroku.
-$wgUploadDirectory = 'uploads';
-$wgUploadS3Bucket = 'verdigris-wiki';
-$wgUploadS3SSL = true;
-$wgPublicS3 = false;
-$wgS3BaseUrl = "http".($wgUploadS3SSL?"s":"")."://s3-us-west-1.amazonaws.com/$wgUploadS3Bucket";
-$wgUploadBaseUrl = "$wgS3BaseUrl/$wgUploadDirectory";
-$wgLocalFileRepo = array(
-	'class' => 'LocalS3Repo',
-	'name' => 's3',
-	'directory' => $wgUploadDirectory,
-	'url' => $wgUploadBaseUrl ? $wgUploadBaseUrl . $wgUploadPath : $wgUploadPath,
-	'urlbase' => $wgS3BaseUrl ? $wgS3BaseUrl : "",
-	'hashLevels' => $wgHashedUploadDirectory ? 2 : 0,
-	'thumbScriptUrl' => $wgThumbnailScriptPath,
-	'transformVia404' => !$wgGenerateThumbnailOnParse,
-	'initialCapital' => $wgCapitalLinks,
-	'deletedDir' => $wgUploadDirectory.'/deleted',
-	'deletedHashLevels' => $wgFileStore['deleted']['hash'],
-	'AWS_ACCESS_KEY' => getenv('AWS_IAM_ACCESS_KEY'),
-	'AWS_SECRET_KEY' => getenv('AWS_IAM_SECRET_KEY'),
-	'AWS_S3_BUCKET' => $wgUploadS3Bucket,
-	'AWS_S3_PUBLIC' => $wgPublicS3,
-	'AWS_S3_SSL' => $wgUploadS3SSL
-);
+// $wgUploadDirectory = 'uploads';
+// $wgUploadS3Bucket = 'verdigris-wiki';
+// $wgUploadS3SSL = true;
+// $wgPublicS3 = false;
+// $wgS3BaseUrl = "http".($wgUploadS3SSL?"s":"")."://s3-us-west-1.amazonaws.com/$wgUploadS3Bucket";
+// $wgUploadBaseUrl = "$wgS3BaseUrl/$wgUploadDirectory";
+// $wgLocalFileRepo = array(
+// 	'class' => 'LocalS3Repo',
+// 	'name' => 's3',
+// 	'directory' => $wgUploadDirectory,
+// 	'url' => $wgUploadBaseUrl ? $wgUploadBaseUrl . $wgUploadPath : $wgUploadPath,
+// 	'urlbase' => $wgS3BaseUrl ? $wgS3BaseUrl : "",
+// 	'hashLevels' => $wgHashedUploadDirectory ? 2 : 0,
+// 	'thumbScriptUrl' => $wgThumbnailScriptPath,
+// 	'transformVia404' => !$wgGenerateThumbnailOnParse,
+// 	'initialCapital' => $wgCapitalLinks,
+// 	'deletedDir' => $wgUploadDirectory.'/deleted',
+// 	'deletedHashLevels' => $wgFileStore['deleted']['hash'],
+// 	'AWS_ACCESS_KEY' => getenv('AWS_IAM_ACCESS_KEY'),
+// 	'AWS_SECRET_KEY' => getenv('AWS_IAM_SECRET_KEY'),
+// 	'AWS_S3_BUCKET' => $wgUploadS3Bucket,
+// 	'AWS_S3_PUBLIC' => $wgPublicS3,
+// 	'AWS_S3_SSL' => $wgUploadS3SSL
+// );
 
-require_once("$IP/extensions/LocalS3Repo/LocalS3Repo.php");
+// require_once("$IP/extensions/LocalS3Repo/LocalS3Repo.php");
 
 # Load Syntax Highlight plugin
 require_once("$IP/extensions/SyntaxHighlight_GeSHi/SyntaxHighlight_GeSHi.php");
