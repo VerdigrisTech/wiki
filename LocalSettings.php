@@ -158,7 +158,9 @@ $wgGLAppId = getenv('GOOGLE_OAUTH_CLIENT_ID');
 $wgGLSecret = getenv('GOOGLE_OAUTH_CLIENT_SECRET');
 $wgGLAllowedDomains = array('verdigris.co');
 $wgGLAllowAccountCreation = true;
-# $wgGLReplaceMWLogin = true;
+
+# Disable any other authentication provider except Google Login
+$wgAuthManagerAutoConfig['primaryauth'] = [];
 
 $wgShowExceptionDetails = true;
 
