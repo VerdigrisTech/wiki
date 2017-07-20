@@ -159,6 +159,7 @@ $wgGLSecret = getenv('GOOGLE_OAUTH_CLIENT_SECRET');
 $wgGLAllowedDomains = array('verdigris.co');
 
 # Allow automatic account creation
+$wgGroupPermissions['sysops']['createaccount'] = true;
 $wgGroupPermissions['*']['autocreateaccount'] = true;
 
 # Disable any other authentication provider except Google Login
