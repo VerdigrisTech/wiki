@@ -135,7 +135,7 @@ $wgGroupPermissions['*']['read'] = false;
 $wgGroupPermissions['*']['edit'] = false;
 
 # Need to be logged in to view wiki.
-$wgWhitelistRead = array( 'Special:GoogleLogin' );
+$wgWhitelistRead = array('Special:GoogleLogin', 'Special:GoogleLoginReturn');
 
 ## Default skin: you can change the default skin. Use the internal symbolic
 ## names, ie 'vector', 'monobook':
