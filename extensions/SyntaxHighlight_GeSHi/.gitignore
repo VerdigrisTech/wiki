@@ -4,5 +4,3 @@
 .*.swp
 .idea
 node_modules
-/vendor
-composer.lock
