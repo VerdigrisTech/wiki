@@ -93,6 +93,9 @@ $wgImageMagickConvertCommand = "/usr/bin/convert";
 # InstantCommons allows wiki to use images from http://commons.wikimedia.org
 $wgUseInstantCommons = false;
 
+# Allow external images
+$wgAllowExternalImages = true;
+
 ## If you use ImageMagick (or any other shell command) on a
 ## Linux server, this will need to be set to the name of an
 ## available UTF-8 locale
